@@ -1,5 +1,7 @@
 use super::*;
 
+use crate::transport::UpstreamStream;
+
 #[allow(dead_code)]
 /// Runs Direct relay with standalone cancellation and shared-state defaults.
 pub(crate) async fn handle_via_direct<R, W>(
@@ -124,12 +126,51 @@ where
             "Ignoring invalid scope hint and falling back to default upstream selection"
         );
     }
-    let tg_stream = tokio::select! {
-        result = upstream_manager.connect(dc_addr, Some(success.dc_idx), scope_hint) => result?,
-        _ = session_cancel.cancelled() => {
-            return Err(ProxyError::UserDisabled {
-                user: user.to_string(),
-            });
+    let tg_stream = if config.halfmt.is_client() {
+        // halfmt split mode (front half): leave exclusively through the
+        // configured SOCKS tunnel — there is no direct path in this branch
+        // (fail-closed by construction), then tell the remote back half
+        // which DC to dial via a one-line preamble sent before any TG bytes.
+        let tunnel_addr = config
+            .halfmt
+            .client_tunnel_addr()
+            .map_err(ProxyError::Config)?;
+        let server_addr = config
+            .halfmt
+            .client_server_addr()
+            .map_err(ProxyError::Config)?;
+        let budget = Duration::from_secs(config.general.tg_connect.max(1));
+        let tunneled = tokio::time::timeout(budget, async {
+            let mut s = tokio::net::TcpStream::connect(tunnel_addr)
+                .await
+                .map_err(ProxyError::Io)?;
+            let _ = s.set_nodelay(true);
+            crate::transport::socks::connect_socks5(&mut s, server_addr, None, None).await?;
+            s.write_all(format!("{dc_addr}\n").as_bytes())
+                .await
+                .map_err(ProxyError::Io)?;
+            s.flush().await.map_err(ProxyError::Io)?;
+            Ok::<_, ProxyError>(s)
+        })
+        .await
+        .map_err(|_| ProxyError::ConnectionTimeout {
+            addr: server_addr.to_string(),
+        })??;
+        debug!(
+            peer = %success.peer,
+            dc_addr = %dc_addr,
+            server = %server_addr,
+            "halfmt: split tunnel established, DC preamble sent"
+        );
+        UpstreamStream::Tcp(tunneled)
+    } else {
+        tokio::select! {
+            result = upstream_manager.connect(dc_addr, Some(success.dc_idx), scope_hint) => result?,
+            _ = session_cancel.cancelled() => {
+                return Err(ProxyError::UserDisabled {
+                    user: user.to_string(),
+                });
+            }
         }
     };
 

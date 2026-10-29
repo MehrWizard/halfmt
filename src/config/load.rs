@@ -98,6 +98,82 @@ pub(crate) struct ConfigSourceGraph {
     pub(crate) rendered: String,
 }
 
+/// Optional halfmt split-mode (fork extension). Absent section keeps
+/// byte-identical upstream telemt behavior.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct HalfmtConfig {
+    /// `client` = front half (reach the halfmt server through the S3 tunnel),
+    /// `server` = back half (accept split connections, dial Telegram).
+    #[serde(default)]
+    pub mode: Option<HalfmtMode>,
+
+    /// Client mode: local SOCKS5 that reaches the foreign halfmt server
+    /// (a s3tunnel client, e.g. "127.0.0.1:11234").
+    #[serde(default)]
+    pub tunnel: Option<String>,
+
+    /// Client mode: halfmt server address as seen BY the tunnel's egress
+    /// side (e.g. "127.0.0.1:25051" on the foreign box).
+    #[serde(default)]
+    pub server: Option<String>,
+
+    /// Server mode: split-connection listen address (e.g. "127.0.0.1:25051").
+    #[serde(default)]
+    pub listen: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum HalfmtMode {
+    Client,
+    Server,
+}
+
+impl HalfmtConfig {
+    /// Fail fast at startup when mode-specific addresses are missing or invalid.
+    pub fn validate(&self) -> std::result::Result<(), String> {
+        match self.mode {
+            None => Ok(()),
+            Some(HalfmtMode::Client) => {
+                self.client_tunnel_addr()?;
+                self.client_server_addr()?;
+                Ok(())
+            }
+            Some(HalfmtMode::Server) => {
+                self.listen_addr()?;
+                Ok(())
+            }
+        }
+    }
+
+    pub fn is_client(&self) -> bool {
+        matches!(self.mode, Some(HalfmtMode::Client))
+    }
+
+    pub fn is_server(&self) -> bool {
+        matches!(self.mode, Some(HalfmtMode::Server))
+    }
+
+    pub fn client_tunnel_addr(&self) -> std::result::Result<SocketAddr, String> {
+        parse_halfmt_addr(self.tunnel.as_deref(), "halfmt.tunnel")
+    }
+
+    pub fn client_server_addr(&self) -> std::result::Result<SocketAddr, String> {
+        parse_halfmt_addr(self.server.as_deref(), "halfmt.server")
+    }
+
+    pub fn listen_addr(&self) -> std::result::Result<SocketAddr, String> {
+        parse_halfmt_addr(self.listen.as_deref(), "halfmt.listen")
+    }
+}
+
+fn parse_halfmt_addr(value: Option<&str>, field: &str) -> std::result::Result<SocketAddr, String> {
+    let raw = value.ok_or_else(|| format!("{field} is required when halfmt mode is enabled"))?;
+    raw.trim()
+        .parse::<SocketAddr>()
+        .map_err(|e| format!("{field} {raw:?}: {e}"))
+}
+
 /// Main runtime configuration loaded from TOML.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ProxyConfig {
@@ -140,6 +216,10 @@ pub struct ProxyConfig {
     /// Optional proxy link rendering controls.
     #[serde(default)]
     pub show_link: ShowLink,
+
+    /// Optional halfmt split-mode (fork extension; absent = upstream behavior).
+    #[serde(default)]
+    pub halfmt: HalfmtConfig,
 
     /// DC address overrides for non-standard DCs (CDN, media, test, etc.)
     /// Keys are DC indices as strings, values are one or more "ip:port" addresses.

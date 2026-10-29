@@ -40,6 +40,8 @@ mod api_tests;
 mod conntrack_tests;
 #[path = "load_basic_tests/defaults_access_tests.rs"]
 mod defaults_access_tests;
+#[path = "load_basic_tests/halfmt_mode_tests.rs"]
+mod halfmt_mode_tests;
 #[path = "load_basic_tests/legacy_policy_tests.rs"]
 mod legacy_policy_tests;
 #[path = "load_basic_tests/me_route_tests.rs"]

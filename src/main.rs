@@ -8,6 +8,7 @@ mod crypto;
 #[cfg(unix)]
 mod daemon;
 mod error;
+mod halfmt_server;
 mod healthcheck;
 mod ip_tracker;
 #[cfg(test)]

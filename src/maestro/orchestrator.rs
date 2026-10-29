@@ -54,6 +54,11 @@ pub(super) async fn run_telemt_core(
         config.server.conntrack_control.inline_conntrack_control = false;
     }
 
+    // halfmt fork: fail fast on incomplete split-mode configuration.
+    if let Err(e) = config.halfmt.validate() {
+        return Err(format!("halfmt config error: {e}").into());
+    }
+
     let quota_store = Arc::new(QuotaStore::default());
     let connection_authority = Arc::new(UserConnectionAuthority::default());
     let stats = Arc::new(Stats::with_process_authorities(
@@ -143,6 +148,37 @@ pub(super) async fn run_telemt_core(
         config.server.max_connections as usize
     };
     let max_connections = Arc::new(Semaphore::new(max_connections_limit));
+
+    // halfmt fork, server mode: accept split connections from the front half
+    // (dial targets the s3tunnel server resolved from the DC preamble) and own
+    // every Telegram-facing socket locally — tunnel blips become byte stalls,
+    // never DC reconnects.
+    if config.halfmt.is_server() {
+        let listen = config
+            .halfmt
+            .listen_addr()
+            .map_err(|e| format!("halfmt: {e}"))?;
+        match tokio::net::TcpListener::bind(listen).await {
+            Ok(listener) => {
+                info!(addr = %listen, "halfmt server mode: split listener enabled");
+                let halfmt_config = Arc::new(config.clone());
+                let halfmt_stats = stats.clone();
+                let halfmt_upstreams = upstream_manager.clone();
+                let halfmt_budget = shared_state.direct_buffer_budget.clone();
+                tokio::spawn(async move {
+                    crate::halfmt_server::run_listener(
+                        listener,
+                        halfmt_config,
+                        halfmt_stats,
+                        halfmt_upstreams,
+                        halfmt_budget,
+                    )
+                    .await;
+                });
+            }
+            Err(e) => return Err(format!("halfmt: cannot bind {listen}: {e}").into()),
+        }
+    }
     let web_trace = WebTraceStore::new(config.web.debug.clone(), &config.web.limits);
     let web_runtime_control = WebRuntimeControl::new();
 

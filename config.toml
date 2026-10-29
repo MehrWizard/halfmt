@@ -59,3 +59,12 @@ tls_front_dir = "tlsfront"   # Cache directory for TLS emulation
 [access.users]
 # format: "username" = "32_hex_chars_secret"
 hello = "00000000000000000000000000000000"
+
+# ── halfmt split mode (fork extension; section absent = plain telemt) ──────
+# [halfmt]
+# mode    = "client"            # "client" = front half, "server" = back half
+# tunnel  = "127.0.0.1:11234"   # client: local SOCKS reaching the foreign
+#                               #         halfmt server (s3tunnel client)
+# server  = "127.0.0.1:25051"   # client: halfmt-server addr as seen by the
+#                               #         tunnel's egress side
+# listen  = "127.0.0.1:25051"   # server: split-connection listener
