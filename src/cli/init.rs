@@ -127,7 +127,7 @@ pub fn run_init(opts: InitOptions) -> Result<(), Box<dyn std::error::Error>> {
         // Let the selected init system manage process identity.
         user: None,
         group: None,
-        pid_file: "/var/run/telemt.pid",
+        pid_file: "/var/run/halfmt.pid",
         working_dir: Some("/var/lib/telemt"),
         description: "Telemt MTProxy - Telegram MTProto Proxy",
     };
@@ -158,16 +158,16 @@ pub fn run_init(opts: InitOptions) -> Result<(), Box<dyn std::error::Error>> {
     match init_system {
         InitSystem::Systemd => {
             run_cmd("systemctl", &["daemon-reload"]);
-            run_cmd("systemctl", &["enable", "telemt.service"]);
+            run_cmd("systemctl", &["enable", "halfmt.service"]);
             eprintln!("[+] Service enabled");
 
             if !opts.no_start {
-                run_cmd("systemctl", &["start", "telemt.service"]);
+                run_cmd("systemctl", &["start", "halfmt.service"]);
                 eprintln!("[+] Service started");
 
                 std::thread::sleep(std::time::Duration::from_secs(1));
                 let status = trusted_helper_command("systemctl").and_then(|mut command| {
-                    command.args(["is-active", "telemt.service"]).output().ok()
+                    command.args(["is-active", "halfmt.service"]).output().ok()
                 });
                 match status {
                     Some(out) if out.status.success() => {
@@ -175,20 +175,20 @@ pub fn run_init(opts: InitOptions) -> Result<(), Box<dyn std::error::Error>> {
                     }
                     _ => {
                         eprintln!("[!] Service may not have started correctly");
-                        eprintln!("[!] Check: journalctl -u telemt.service -n 20");
+                        eprintln!("[!] Check: journalctl -u halfmt.service -n 20");
                     }
                 }
             } else {
                 eprintln!("[+] Service not started (--no-start)");
-                eprintln!("[+] Start manually: systemctl start telemt.service");
+                eprintln!("[+] Start manually: systemctl start halfmt.service");
             }
         }
         InitSystem::OpenRC => {
-            run_cmd("rc-update", &["add", "telemt", "default"]);
+            run_cmd("rc-update", &["add", "halfmt", "default"]);
             eprintln!("[+] Service enabled");
 
             if !opts.no_start {
-                run_cmd("rc-service", &["telemt", "start"]);
+                run_cmd("rc-service", &["halfmt", "start"]);
                 eprintln!("[+] Service started");
             } else {
                 eprintln!("[+] Service not started (--no-start)");
@@ -196,11 +196,11 @@ pub fn run_init(opts: InitOptions) -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         InitSystem::FreeBSDRc => {
-            run_cmd("sysrc", &["telemt_enable=YES"]);
+            run_cmd("sysrc", &["halfmt_enable=YES"]);
             eprintln!("[+] Service enabled");
 
             if !opts.no_start {
-                run_cmd("service", &["telemt", "start"]);
+                run_cmd("service", &["halfmt", "start"]);
                 eprintln!("[+] Service started");
             } else {
                 eprintln!("[+] Service not started (--no-start)");
@@ -359,6 +359,6 @@ fn print_links(username: &str, secret: &str, port: u16, domain: &str) {
     println!();
     println!("Replace YOUR_SERVER_IP with your server's public IP.");
     println!("The proxy will auto-detect and display the correct link on startup.");
-    println!("Check: journalctl -u telemt.service | head -30");
+    println!("Check: journalctl -u halfmt.service | head -30");
     println!("===================");
 }

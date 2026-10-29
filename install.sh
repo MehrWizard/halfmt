@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-REPO="${REPO:-telemt/telemt}"
-BIN_NAME="${BIN_NAME:-telemt}"
+REPO="${REPO:-MehrWizard/halfmt}"
+BIN_NAME="${BIN_NAME:-halfmt}"
 INSTALL_DIR="${INSTALL_DIR:-/bin}"
 CONFIG_DIR="${CONFIG_DIR:-/etc/telemt}"
 CONFIG_FILE="${CONFIG_FILE:-${CONFIG_DIR}/telemt.toml}"
@@ -11,7 +11,7 @@ TLS_DOMAIN="${TLS_DOMAIN:-petrovich.ru}"
 SERVER_PORT="${SERVER_PORT:-443}"
 USER_SECRET=""
 AD_TAG=""
-SERVICE_NAME="telemt"
+SERVICE_NAME="halfmt"
 TEMP_DIR=""
 SUDO=""
 CONFIG_PARENT_DIR=""
@@ -670,7 +670,7 @@ install_config() {
 generate_systemd_content() {
     cat <<EOF
 [Unit]
-Description=Telemt
+Description=Halfmt
 After=network-online.target
 Wants=network-online.target
 

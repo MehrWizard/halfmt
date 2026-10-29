@@ -45,7 +45,7 @@ fn compatibility_pid_lifecycle_accepts_writable_parent_directories() {
     for mode in [0o770, 0o777, 0o1777] {
         let directory = tempfile::tempdir().unwrap();
         fs::set_permissions(directory.path(), fs::Permissions::from_mode(mode)).unwrap();
-        let pid_path = directory.path().join("telemt.pid");
+        let pid_path = directory.path().join("halfmt.pid");
         let mut strict_owner = PidFile::new(&pid_path, true);
         assert!(strict_owner.acquire().is_err());
         assert!(!pid_path.exists());
@@ -83,7 +83,7 @@ fn compatibility_pid_lifecycle_follows_symlinked_parents() {
     let linked = directory.path().join("var");
     fs::create_dir(&real).unwrap();
     symlink("tmp", &linked).unwrap();
-    let pid_path = linked.join("run/telemt.pid");
+    let pid_path = linked.join("run/halfmt.pid");
     let mut strict_owner = PidFile::new(&pid_path, true);
     assert!(strict_owner.acquire().is_err());
     assert!(!real.join("run").exists());
@@ -98,19 +98,19 @@ fn compatibility_pid_lifecycle_follows_symlinked_parents() {
         check_status(&pid_path, false),
         DaemonStatus::Running(std::process::id() as i32)
     );
-    assert!(real.join("run/telemt.pid.lock").exists());
+    assert!(real.join("run/halfmt.pid.lock").exists());
     assert!(read_pid_file(&pid_path, true).is_err());
     assert_eq!(check_status(&pid_path, true), DaemonStatus::NotRunning);
 
     owner.release().unwrap();
-    assert!(!real.join("run/telemt.pid").exists());
+    assert!(!real.join("run/halfmt.pid").exists());
 }
 
 #[test]
 fn private_pid_parent_supports_both_policies() {
     for strict_runtime_paths in [false, true] {
         let directory = tempfile::tempdir().unwrap();
-        let pid_path = directory.path().join("nested/run/telemt.pid");
+        let pid_path = directory.path().join("nested/run/halfmt.pid");
         let mut owner = PidFile::new(&pid_path, strict_runtime_paths);
         owner.acquire().unwrap();
 
@@ -175,7 +175,7 @@ fn lock_holder_subprocess() {
 #[test]
 fn persistent_sibling_lock_serializes_processes_after_pid_unlink() {
     let directory = tempfile::tempdir().unwrap();
-    let pid_path = directory.path().join("telemt.pid");
+    let pid_path = directory.path().join("halfmt.pid");
     let lock_path = sibling_lock_path(&pid_path);
     let ready_path = directory.path().join("ready");
     let stop_path = directory.path().join("stop");
@@ -222,7 +222,7 @@ fn persistent_sibling_lock_serializes_processes_after_pid_unlink() {
 #[test]
 fn stale_pid_checks_are_read_only() {
     let directory = tempfile::tempdir().unwrap();
-    let pid_path = directory.path().join("telemt.pid");
+    let pid_path = directory.path().join("halfmt.pid");
     fs::write(&pid_path, b"2000000000\n").unwrap();
     let pid_file = PidFile::new(&pid_path, false);
 
@@ -237,7 +237,7 @@ fn stale_pid_checks_are_read_only() {
 #[test]
 fn status_requires_live_lock_ownership() {
     let directory = tempfile::tempdir().unwrap();
-    let pid_path = directory.path().join("telemt.pid");
+    let pid_path = directory.path().join("halfmt.pid");
     fs::write(&pid_path, format!("{}\n", std::process::id())).unwrap();
     assert_eq!(
         check_status(&pid_path, false),
@@ -257,7 +257,7 @@ fn status_requires_live_lock_ownership() {
 #[test]
 fn unowned_release_does_not_remove_pid_file() {
     let directory = tempfile::tempdir().unwrap();
-    let pid_path = directory.path().join("telemt.pid");
+    let pid_path = directory.path().join("halfmt.pid");
     fs::write(&pid_path, b"2000000000\n").unwrap();
     let mut pid_file = PidFile::new(&pid_path, false);
 
@@ -269,7 +269,7 @@ fn unowned_release_does_not_remove_pid_file() {
 #[test]
 fn acquire_rejects_pid_symlink_without_truncating_target() {
     let directory = tempfile::tempdir().unwrap();
-    let pid_path = directory.path().join("telemt.pid");
+    let pid_path = directory.path().join("halfmt.pid");
     let target_path = directory.path().join("target");
     fs::write(&target_path, b"preserve\n").unwrap();
     symlink(&target_path, &pid_path).unwrap();
@@ -283,7 +283,7 @@ fn acquire_rejects_pid_symlink_without_truncating_target() {
 #[test]
 fn acquire_rejects_pid_hard_link_without_truncating_target() {
     let directory = tempfile::tempdir().unwrap();
-    let pid_path = directory.path().join("telemt.pid");
+    let pid_path = directory.path().join("halfmt.pid");
     let target_path = directory.path().join("target");
     fs::write(&target_path, b"preserve\n").unwrap();
     fs::hard_link(&target_path, &pid_path).unwrap();
@@ -301,11 +301,11 @@ fn acquire_rejects_symlinked_parent_without_publishing_outside() {
     let linked_parent = directory.path().join("linked");
     fs::create_dir(&real_parent).unwrap();
     symlink(&real_parent, &linked_parent).unwrap();
-    let pid_path = linked_parent.join("telemt.pid");
+    let pid_path = linked_parent.join("halfmt.pid");
     let mut pid_file = PidFile::new(&pid_path, true);
 
     assert!(pid_file.acquire().is_err());
-    assert!(!real_parent.join("telemt.pid").exists());
+    assert!(!real_parent.join("halfmt.pid").exists());
     assert!(!real_parent.join("telemt.pid.lock").exists());
 }
 
@@ -315,19 +315,19 @@ fn release_remains_anchored_after_parent_path_replacement() {
     let active_parent = directory.path().join("active");
     let moved_parent = directory.path().join("moved");
     fs::create_dir(&active_parent).unwrap();
-    let pid_path = active_parent.join("telemt.pid");
+    let pid_path = active_parent.join("halfmt.pid");
     let mut pid_file = PidFile::new(&pid_path, false);
     pid_file.acquire().unwrap();
 
     fs::rename(&active_parent, &moved_parent).unwrap();
     fs::create_dir(&active_parent).unwrap();
-    fs::write(active_parent.join("telemt.pid"), b"replacement\n").unwrap();
+    fs::write(active_parent.join("halfmt.pid"), b"replacement\n").unwrap();
 
     pid_file.release().unwrap();
 
-    assert!(!moved_parent.join("telemt.pid").exists());
+    assert!(!moved_parent.join("halfmt.pid").exists());
     assert_eq!(
-        fs::read(active_parent.join("telemt.pid")).unwrap(),
+        fs::read(active_parent.join("halfmt.pid")).unwrap(),
         b"replacement\n"
     );
 }
@@ -335,7 +335,7 @@ fn release_remains_anchored_after_parent_path_replacement() {
 #[test]
 fn release_does_not_remove_replacement_path() {
     let directory = tempfile::tempdir().unwrap();
-    let pid_path = directory.path().join("telemt.pid");
+    let pid_path = directory.path().join("halfmt.pid");
     let owned_path = directory.path().join("owned.pid");
     let mut pid_file = PidFile::new(&pid_path, false);
     pid_file.acquire().unwrap();
@@ -355,7 +355,7 @@ fn release_does_not_remove_replacement_path() {
 #[test]
 fn pid_parser_rejects_process_group_values() {
     let directory = tempfile::tempdir().unwrap();
-    let pid_path = directory.path().join("telemt.pid");
+    let pid_path = directory.path().join("halfmt.pid");
 
     for value in ["-1\n", "0\n", "1\n"] {
         fs::write(&pid_path, value).unwrap();
@@ -366,7 +366,7 @@ fn pid_parser_rejects_process_group_values() {
 #[test]
 fn pid_file_release_keeps_lock_inode() {
     let directory = tempfile::tempdir().unwrap();
-    let pid_path = directory.path().join("telemt.pid");
+    let pid_path = directory.path().join("halfmt.pid");
     let lock_path = sibling_lock_path(&pid_path);
     let mut pid_file = PidFile::new(&pid_path, false);
 

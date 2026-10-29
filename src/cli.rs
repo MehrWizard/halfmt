@@ -71,7 +71,7 @@ impl Default for ParsedCommand {
             #[cfg(unix)]
             pid_file: PathBuf::from(DEFAULT_PID_FILE),
             #[cfg(not(unix))]
-            pid_file: PathBuf::from("/var/run/telemt.pid"),
+            pid_file: PathBuf::from("/var/run/halfmt.pid"),
             config_path: "config.toml".to_string(),
             healthcheck_mode: HealthcheckMode::Liveness,
             healthcheck_mode_invalid: None,

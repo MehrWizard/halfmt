@@ -1,4 +1,4 @@
-# Telemt - MTProxy on Rust + Tokio
+# halfmt - MTProxy on Rust + Tokio (fork of telemt)
 
 [![Latest Release](https://img.shields.io/github/v/release/telemt/telemt?color=neon)](https://github.com/telemt/telemt/releases/latest) [![Stars](https://img.shields.io/github/stars/telemt/telemt?style=social)](https://github.com/telemt/telemt/stargazers) [![Forks](https://img.shields.io/github/forks/telemt/telemt?style=social)](https://github.com/telemt/telemt/network/members)
 

@@ -20,7 +20,7 @@ pub use pid_file::DaemonStatus;
 pub use pid_file::{PidFile, check_status, read_pid_file, signal_pid_file};
 
 /// Default PID file location.
-pub const DEFAULT_PID_FILE: &str = "/var/run/telemt.pid";
+pub const DEFAULT_PID_FILE: &str = "/var/run/halfmt.pid";
 
 /// Daemon configuration options parsed from CLI.
 #[derive(Debug, Clone, Default)]

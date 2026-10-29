@@ -114,15 +114,15 @@ pub(super) fn reload(pid_file: &Path, strict_runtime_paths: bool) -> i32 {
 pub(super) fn status(pid_file: &Path, strict_runtime_paths: bool) -> i32 {
     match daemon::check_status(pid_file, strict_runtime_paths) {
         daemon::DaemonStatus::Running(pid) => {
-            println!("telemt is running (pid {})", pid);
+            println!("halfmt is running (pid {})", pid);
             0
         }
         daemon::DaemonStatus::Stale(pid) => {
-            println!("telemt is not running (stale pid file, was pid {})", pid);
+            println!("halfmt is not running (stale pid file, was pid {})", pid);
             1
         }
         daemon::DaemonStatus::NotRunning => {
-            println!("telemt is not running");
+            println!("halfmt is not running");
             1
         }
     }
@@ -230,7 +230,7 @@ mod tests {
             fs::create_dir(&real).unwrap();
             fs::set_permissions(&real, fs::Permissions::from_mode(mode)).unwrap();
             symlink(&real, &linked).unwrap();
-            let pid_path = if linked_parent { &linked } else { &real }.join("telemt.pid");
+            let pid_path = if linked_parent { &linked } else { &real }.join("halfmt.pid");
             let ready = root.path().join("ready");
             let reloaded = root.path().join("reloaded");
             let mut child = ControlChild(
@@ -289,7 +289,7 @@ mod tests {
     #[test]
     fn status_does_not_remove_stale_pid_file() {
         let directory = tempfile::tempdir().unwrap();
-        let pid_file = directory.path().join("telemt.pid");
+        let pid_file = directory.path().join("halfmt.pid");
         fs::write(&pid_file, b"2000000000\n").unwrap();
 
         assert_eq!(status(&pid_file, false), 1);

@@ -226,7 +226,7 @@ pub(crate) fn parse_cli() -> CliArgs {
                 std::process::exit(0);
             }
             "--version" | "-V" => {
-                println!("telemt {}", env!("CARGO_PKG_VERSION"));
+                println!("halfmt {}", env!("CARGO_PKG_VERSION"));
                 std::process::exit(0);
             }
             // Skip daemon-related flags (already parsed)
@@ -273,7 +273,7 @@ pub(crate) fn parse_cli() -> CliArgs {
 }
 
 fn print_help() {
-    eprintln!("Usage: telemt [COMMAND] [OPTIONS] [config.toml]");
+    eprintln!("Usage: halfmt [COMMAND] [OPTIONS] [config.toml]");
     eprintln!();
     eprintln!("Commands:");
     eprintln!("  run                     Run in foreground (default if no command given)");

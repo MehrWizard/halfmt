@@ -59,7 +59,7 @@ pub fn detect_init_system() -> InitSystem {
 /// Returns the default service file path for the given init system.
 pub fn service_file_path(init_system: InitSystem) -> &'static str {
     match init_system {
-        InitSystem::Systemd => "/etc/systemd/system/telemt.service",
+        InitSystem::Systemd => "/etc/systemd/system/halfmt.service",
         InitSystem::OpenRC => "/etc/init.d/telemt",
         InitSystem::FreeBSDRc => "/usr/local/etc/rc.d/telemt",
         InitSystem::Unknown => "/etc/init.d/telemt",
@@ -402,7 +402,7 @@ mod tests {
     fn test_service_file_paths() {
         assert_eq!(
             service_file_path(InitSystem::Systemd),
-            "/etc/systemd/system/telemt.service"
+            "/etc/systemd/system/halfmt.service"
         );
         assert_eq!(service_file_path(InitSystem::OpenRC), "/etc/init.d/telemt");
         assert_eq!(

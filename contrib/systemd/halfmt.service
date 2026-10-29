@@ -1,5 +1,5 @@
 [Unit]
-Description=Telemt
+Description=Halfmt
 Wants=network-online.target
 After=multi-user.target network.target network-online.target
 
@@ -8,7 +8,7 @@ Type=simple
 User=telemt
 Group=telemt
 WorkingDirectory=/var/lib/telemt
-ExecStart=/usr/bin/telemt /etc/telemt/telemt.toml
+ExecStart=/usr/bin/halfmt /etc/telemt/telemt.toml
 Restart=on-failure
 RestartSec=10
 LimitNOFILE=65536
